@@ -1,6 +1,8 @@
 # devsecops-class-docker
+
 ## Pre requisiteis
 - launch ubuntu ec2
+- Perform the following steps in ubuntu ec2
 
 ## Update OS
 
@@ -75,15 +77,38 @@ sudo docker ps
 sudo docker exec jenkins-master tail -f /var/log/jenkins/jenkins.log
 ```
 ## Access jenkins
-http://<public-ip>:8080
+http://public-ip:8080
 
-### Scan the image
+- Reference: https://container-devsecops.awssecworkshops.com
+
+### Dockerfile linitng
+- Hadolint
+- https://github.com/hadolint/hadolint
+- sudo docker run --rm -i -v ${PWD}/hadolint.yml:/.hadolint.yaml hadolint/hadolint:v1.16.2 hadolint -f json - < Dockerfile
+
+### Secrets scanning
+- trufflehog
+- https://github.com/trufflesecurity/trufflehog
+- sudo docker run --rm -it -v "$PWD:/pwd" trufflesecurity/trufflehog:latest github --repo https://github.com/trufflesecurity/test_keys
+ 
+
+## Vulnerabity scanning
+- Anchore
+- https://docs.anchore.com/current/docs/using/cli_usage/images/
+- sudo curl -sSfL  https://anchorectl-releases.anchore.io/anchorectl/install.sh  | sudo sh -s -- -b /usr/local/bin
 
 ### Push to DockerHub
+- docker login
+- sudo docker tag devops-jenkins partha2019/devops-jenkins:1.0
+- sudo docker push partha2019/devops-jenkins:1.0
 
 ### Download to another Instance
 - launch the amazon linux2 instance
 - install docker
 - get the image
+  * docker pull partha2019/devops-jenkins:1.0
 - run the image
 
+sudo docker run -p 8080:8080 -p 50000:50000 \
+    --name=devops-jenkins \
+    -d devops-jenkins:1.0
