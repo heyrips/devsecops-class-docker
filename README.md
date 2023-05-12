@@ -7,34 +7,29 @@
 
 ## Update OS
 
-```
-sudo apt-get update -y
-sudo apt-get upgrade -y
-```
-
-## Install Docker
+- Ref : https://www.digitalocean.com/community/tutorials/how-to-install-and-use-docker-on-ubuntu-22-04
 
 ```
-sudo wget https://download.docker.com/linux/ubuntu/gpg
-sudo apt-key add gpg
-```
+sudo apt update -y
 
-```
-sudo vi /etc/apt/sources.list.d/docker.list
-```
+sudo apt install -y apt-transport-https ca-certificates curl software-properties-common
 
-add this to this file
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 
-- deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable'
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-```
-sudo apt-get update -y
-sudo apt-get install docker-ce -y
+sudo apt update -y
+
+apt-cache policy docker-ce
+
+sudo apt install docker-ce -y
 
 sudo systemctl status docker
-sudo systemctl start docker
-sudo systemctl stop docker
+
 ```
+
+- check docker version: docker version
+- check docker commands: docker
 
 ## Create Docker Volume for Data and Log
 
@@ -51,7 +46,7 @@ sudo docker volume ls
 
 ```
 FROM jenkins/jenkins
-LABEL maintainer="hitjethva@gmail.com"
+LABEL maintainer="partha.abdas@gmail.com"
 USER root
 RUN mkdir /var/log/jenkins
 RUN mkdir /var/cache/jenkins
@@ -67,7 +62,8 @@ ENV JENKINS_OPTS="--logfile=/var/log/jenkins/jenkins.log --webroot=/var/cache/je
 
 ```
 cd docker
-docker build -t devops-jenkins:1.0 .
+sudo docker build -t <image-name>:1.0 .
+sudo docker images
 ```
 
 ## Run Jenkins Container with Data and Log Volume
@@ -77,7 +73,7 @@ sudo docker run -p 8080:8080 -p 50000:50000 \
     --name=jenkins-master \
     --mount source=jenkins-log,target=/var/log/jenkins \
     --mount source=jenkins-data,target=/var/jenkins_home \
-    -d devops-jenkins:1.0
+    -d <image-name>:1.0
 
 sudo docker ps
 ```
@@ -91,6 +87,40 @@ sudo docker exec jenkins-master tail -f /var/log/jenkins/jenkins.log
 ## Access jenkins
 
 http://public-ip:8080
+
+### Push to DockerHub
+
+- docker login
+- sudo docker tag devsecops-jenkins:1.0 partha2019/devsecops-jenkins:1.0
+- sudo docker push partha2019/devsecops-jenkins:1.0
+- Please make sure the uploaded images exists in dockerhub
+
+### Download to another Instance
+
+- launch another ubuntu machine and install docker using above commands
+- Create Docker Volume for Data and Log
+
+```
+sudo docker volume create jenkins-data
+sudo docker volume create jenkins-log
+sudo docker volume ls
+```
+
+- get the image
+
+```
+docker pull partha2019/devsecops-jenkins:1.0
+```
+
+- run the image
+
+```
+sudo docker run -p 8080:8080 -p 50000:50000  --name=devsecops-may2023  -d partha2019/devsecops-may2023:1.0
+```
+
+- Access Jenkins: http://public-ip:8080
+
+## DevSecOps
 
 - Reference: https://container-devsecops.awssecworkshops.com
 
@@ -106,26 +136,8 @@ http://public-ip:8080
 - https://github.com/trufflesecurity/trufflehog
 - sudo docker run --rm -it -v "$PWD:/pwd" trufflesecurity/trufflehog:latest github --repo https://github.com/trufflesecurity/test_keys
 
-## Vulnerabity scanning
+### Vulnerabity scanning
 
 - Anchore
 - https://docs.anchore.com/current/docs/using/cli_usage/images/
 - sudo curl -sSfL https://anchorectl-releases.anchore.io/anchorectl/install.sh | sudo sh -s -- -b /usr/local/bin
-
-### Push to DockerHub
-
-- docker login
-- sudo docker tag devops-jenkins partha2019/devops-jenkins:1.0
-- sudo docker push partha2019/devops-jenkins:1.0
-
-### Download to another Instance
-
-- launch the amazon linux2 instance
-- install docker
-- get the image
-  - docker pull partha2019/devops-jenkins:1.0
-- run the image
-
-sudo docker run -p 8080:8080 -p 50000:50000 \
- --name=devops-jenkins \
- -d devops-jenkins:1.0
